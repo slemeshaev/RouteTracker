@@ -69,16 +69,21 @@ class MapViewController: UIViewController {
     
     // фокусировка на пользователе
     private func centerViewInUserLocation() {
-        if let location = locationManger.location?.coordinate {
-            let coordinate = CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
-            // Создаём камеру с использованием координат и уровнем увеличения
-            let camera = GMSCameraPosition.camera(withTarget: coordinate, zoom: 17)
-            // Устанавливаем камеру для карты
-            mapView.camera = camera
-            print("Координаты: \(location.latitude) и \(location.longitude)")
+        if let location = mapView.myLocation {
+            print("Локация пользователя: \(location)")
         } else {
-            print("Что-то не так!")
+            print("Локация не определена!")
         }
+//        if let location = locationManger.location?.coordinate {
+//            let coordinate = CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
+//            // Создаём камеру с использованием координат и уровнем увеличения
+//            let camera = GMSCameraPosition.camera(withTarget: coordinate, zoom: 17)
+//            // Устанавливаем камеру для карты
+//            mapView.camera = camera
+//            print("Координаты: \(location.latitude) и \(location.longitude)")
+//        } else {
+//            print("Что-то не так!")
+//        }
     }
     
     // начать новый трек
