@@ -13,94 +13,62 @@ class MapViewController: UIViewController {
     
     @IBOutlet weak var mapView: GMSMapView!
     
-    let locationManger = CLLocationManager()
+    var locationManger: CLLocationManager?
     
+    // свойство хранения маркера
+    var manualMarker: GMSMarker?
+    
+    // рисуем маршрут
     var route: GMSPolyline?
     var routePath: GMSMutablePath?
     
+    // MARK: -viewDidLoad
     override func viewDidLoad() {
         super.viewDidLoad()
-        checkLocationServices()
-        centerViewInUserLocation()
+        //configureMap()
+        configureLocationManager()
     }
     
-    // проверка сервисов геолокаций
-    private func checkLocationServices() {
-        if CLLocationManager.locationServicesEnabled() {
-            setupLocationManager()
-            checkLocationAuthorization()
-        } else {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                self.showAlert(title: "Сервисы локации отключены",
-                               message: "Для того чтобы их включить, перейдите в настройки сервисы локации")
-            }
-        }
+    
+    // конфигурация карты
+    private func configureMap() {
+        // Центр Москвы
+        let coordinate = CLLocationCoordinate2D(latitude: 37.33519572, longitude: -122.03254980)
+        // Создаём камеру с использованием координат и уровнем увеличения
+        let camera = GMSCameraPosition.camera(withTarget: coordinate, zoom: 17)
+        //Устанавливаем камеру для карты
+        mapView.camera = camera
+        addMarker(coordinate: coordinate)
     }
     
-    // менеджер установки локации
-    private func setupLocationManager() {
-        locationManger.delegate = self
-        locationManger.desiredAccuracy = kCLLocationAccuracyBest
+    // конфигурация менедежера локаций
+    private func configureLocationManager() {
+        locationManger = CLLocationManager()
+        locationManger?.requestAlwaysAuthorization()
+        locationManger?.requestWhenInUseAuthorization()
+        locationManger?.delegate = self
+        locationManger?.requestLocation() // запрос текущей геопозиции
+        locationManger?.allowsBackgroundLocationUpdates = true
+        locationManger?.requestAlwaysAuthorization()
     }
     
-    // проверка авторизации локации
-    private func checkLocationAuthorization() {
-        switch locationManger.authorizationStatus {
-        case .authorizedWhenInUse:
-            mapView.isMyLocationEnabled = true
-            break
-        case .denied:
-            // show alert controller
-            print("kuku")
-            break
-        case .notDetermined:
-            locationManger.requestWhenInUseAuthorization()
-            break
-        case .restricted:
-            // show alert controller
-            print("kuku")
-            break
-        case .authorizedAlways:
-            break
-        @unknown default:
-            print("Доступен новый кейс")
-        }
+    // метод добавления маркера на карту
+    private func addMarker(coordinate: CLLocationCoordinate2D) {
+        let marker = GMSMarker(position: coordinate)
+        marker.map = mapView
     }
     
-    // фокусировка на пользователе
-    private func centerViewInUserLocation() {
-        if let location = mapView.myLocation {
-            print("Локация пользователя: \(location)")
-        } else {
-            print("Локация не определена!")
-        }
-//        if let location = locationManger.location?.coordinate {
-//            let coordinate = CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
-//            // Создаём камеру с использованием координат и уровнем увеличения
-//            let camera = GMSCameraPosition.camera(withTarget: coordinate, zoom: 17)
-//            // Устанавливаем камеру для карты
-//            mapView.camera = camera
-//            print("Координаты: \(location.latitude) и \(location.longitude)")
-//        } else {
-//            print("Что-то не так!")
-//        }
-    }
-    
-    // начать новый трек
-    @IBAction func startTrackTapped(_ sender: UIButton) {
-        //Запускается слежение.
-        //locationManager?.startUpdatingLocation()
-        //Создаётся новая линия на карте или заменяется предыдущая.
+    // метод обновления локации
+    private func updateLocation() {
         // Отвязываем от карты старую линию
-//        route?.map = nil
-//        // Заменяем старую линию новой
-//        route = GMSPolyline()
-//        // Заменяем старый путь новым, пока пустым (без точек)
-//        routePath = GMSMutablePath()
-//        // Добавляем новую линию на карту
-//        route?.map = mapView
+        route?.map = nil
+        // Заменяем старую линию новой
+        route = GMSPolyline()
+        // Заменяем старый путь новым, пока пустым (без точек)
+        routePath = GMSMutablePath() // Добавляем новую линию на карту
+        route?.map = mapView
         // Запускаем отслеживание или продолжаем, если оно уже запущено
-        //locationManager?.startUpdatingLocation()
+        locationManger?.startUpdatingLocation()
     }
     
     // показать alert controller
@@ -111,11 +79,17 @@ class MapViewController: UIViewController {
         present(alert, animated: true)
     }
     
+    // начать новый трек
+    @IBAction func startTrackTapped(_ sender: UIButton) {
+        updateLocation()
+        // отслеживание изменение местоположения
+        //locationManger?.startUpdatingLocation()
+    }
     
     // закончить трек
     @IBAction func endTrackTapped(_ sender: UIButton) {
         //Завершается слежение.
-        //locationManager?.stopUpdatingLocation()
+        locationManger?.stopUpdatingLocation()
         //Все точки маршрута сохраняются в базу данных.
         //Прежде чем сохранить точки из базы, необходимо удалить предыдущие точки.
     }
@@ -131,28 +105,39 @@ class MapViewController: UIViewController {
     
 }
 
-extension MapViewController: CLLocationManagerDelegate {
-    
-    func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
-        checkLocationAuthorization()
+// MARK: - GMSMapViewDelegate
+extension MapViewController: GMSMapViewDelegate {
+    private func mapView(_ mapView: GMSMapView, didTap coordinate: CLLocationCoordinate2D) {
+        if let manualMarker = manualMarker {
+            manualMarker.position = coordinate
+        } else {
+            let marker = GMSMarker(position: coordinate)
+            marker.map = mapView
+            self.manualMarker = marker
+        }
     }
-    
-    // получение координат текущего местоположения
+}
+
+// MARK: - CLLocationManagerDelegate
+extension MapViewController: CLLocationManagerDelegate {
+    // метод обновления локации
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        print(locations)
-        // Берём последнюю точку из полученного набора
+        // получения адреса по координатам
         guard let location = locations.last else { return }
-        // Добавляем её в путь маршрута
+        // добавляем ее в путь маршрута
         routePath?.add(location.coordinate)
-        // Обновляем путь у линии маршрута путём повторного присвоения
+        // обновляем путь у линии
         route?.path = routePath
-        // Чтобы наблюдать за движением, установим камеру на только что добавленную точку
+        // чтобы наблюдать за движением установим камеру
         let position = GMSCameraPosition.camera(withTarget: location.coordinate, zoom: 17)
         mapView.animate(to: position)
+        let geocoder = CLGeocoder()
+        geocoder.reverseGeocodeLocation(location) { places, error in
+            print(places?.first)
+        }
     }
-    
-    // метод для обработки ошибки получения локации
+    // метод обработки ошибок при получении локации
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print(error.localizedDescription)
+        print(error)
     }
 }
