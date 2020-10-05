@@ -9,10 +9,17 @@ import UIKit
 import RealmSwift
 
 class MUser: Object {
-    @objc dynamic var login = ""
-    @objc dynamic var password = ""
+    @objc dynamic var login: String = ""
+    @objc dynamic var password: String = ""
+    
+    convenience init(login: String, password: String) {
+        self.init()
+        self.login = login
+        self.password = password
+    }
     
     override static func primaryKey() -> String? {
         return "login"
     }
+    
 }

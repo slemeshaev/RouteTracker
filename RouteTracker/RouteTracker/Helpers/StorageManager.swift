@@ -19,7 +19,7 @@ class StorageManager {
         }
     }
     
-    // удаление объекта user
+    // удаление объекта
     static func deleteObject(_ user: MUser) {
         
         try! realm.write {
