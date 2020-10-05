@@ -15,6 +15,8 @@ class MapViewController: UIViewController {
     
     var locationManger: CLLocationManager?
     
+    var usselesExampleVariable = ""
+    
     // свойство хранения маркера
     var manualMarker: GMSMarker?
     

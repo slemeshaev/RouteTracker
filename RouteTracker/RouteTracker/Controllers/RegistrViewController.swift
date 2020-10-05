@@ -35,8 +35,17 @@ class RegistrViewController: UIViewController {
         }
     }
     
+    // показать alert controller
+    private func showAlert(title: String, message: String) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        let okAction = UIAlertAction(title: "Ok", style: .default)
+        alert.addAction(okAction)
+        present(alert, animated: true)
+    }
+    
     @IBAction func registrButtonTapped(_ sender: UIButton) {
         savePlace()
+        showAlert(title: "Успешно!", message: "Пользователь \(loginTextField.text!) успешно зарегистрирован!")
     }
     
 
